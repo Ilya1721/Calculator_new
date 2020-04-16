@@ -49,6 +49,7 @@ public class Main_UI extends Application
 			set_script_engine();
 			
 			MyStage.addEventHandler(KeyEvent.KEY_PRESSED, OnEnterPressed());
+			MyStage.addEventHandler(KeyEvent.KEY_PRESSED, OnEscPressed(MyStage));
 			MyStage.setTitle("Calculator");
 			MyStage.setScene(new Scene(MainLayout));
 			MyStage.setResizable(false);
@@ -66,6 +67,17 @@ public class Main_UI extends Application
 			public void handle(KeyEvent event) {
 				if(event.getCode() == KeyCode.ENTER) {
 					calculate();
+				}
+			}
+		};
+	}
+	
+	public EventHandler<KeyEvent> OnEscPressed(Stage stage) 
+	{
+		return new EventHandler<KeyEvent>() {
+			public void handle(KeyEvent event) {
+				if(event.getCode() == KeyCode.ESCAPE) {
+					stage.close();
 				}
 			}
 		};
@@ -170,17 +182,17 @@ public class Main_UI extends Application
 		
 		ButtonTable[3][0].setOnMouseClicked(new EventHandler<MouseEvent>() {
 			public void handle(MouseEvent event) {
-				if(ExpressionField.getText().toCharArray()[0] == '-') 
+				if(ExpressionField.getText().toCharArray()[0] == 'm') 
 				{
-					ExpressionField.setText("+" + ExpressionField.getText(1, ExpressionField.getText().length()));
+					ExpressionField.setText("p" + ExpressionField.getText(1, ExpressionField.getText().length()));
 				}
-				else if(ExpressionField.getText().toCharArray()[0] == '+')
+				else if(ExpressionField.getText().toCharArray()[0] == 'p')
 				{
-					ExpressionField.setText("-" + ExpressionField.getText(1, ExpressionField.getText().length()));
+					ExpressionField.setText("m" + ExpressionField.getText(1, ExpressionField.getText().length()));
 				}
 				else 
 				{
-					ExpressionField.setText("+" + ExpressionField.getText());
+					ExpressionField.setText("p" + ExpressionField.getText());
 				}
 			}
 		});
@@ -193,7 +205,7 @@ public class Main_UI extends Application
 		
 		ButtonTable[3][2].setOnMouseClicked(new EventHandler<MouseEvent>() {
 			public void handle(MouseEvent event) {
-				ExpressionField.setText(ExpressionField.getText() + "%");
+				ExpressionField.setText(ExpressionField.getText() + ButtonTable[3][2].getText());
 			}
 		});
 		
@@ -252,16 +264,70 @@ public class Main_UI extends Application
 	{
 		try 
 		{
-			double result;
-			char[] text = ExpressionField.getText().toCharArray();
-			if(text[0] == '-') {
-				result = Double.parseDouble(Engine.eval(ExpressionField.getText(1, text.length)).toString());
+			double result = 0;
+			boolean braceError = false;
+			String str = ExpressionField.getText();
+			if(str.contains("mod")) {
+				str = str.replaceAll("mod", "%");
+			}
+			
+			char[] text = str.toCharArray();
+			if(text.length == 0) {
+				
+			}
+			
+			if(str.contains("(") || str.contains(")")) {
+				int leftCount = 0;
+				int rightCount = 0;
+				int lastIndex = 0;
+				while(lastIndex != -1) {
+					lastIndex = str.indexOf("(", lastIndex);
+					if(lastIndex != -1) {
+						leftCount++;
+						lastIndex++;
+					}	
+				}
+				lastIndex = 0;
+				while(lastIndex != -1) {
+					lastIndex = str.indexOf(")", lastIndex);
+					if(lastIndex != -1) {
+						rightCount++;
+						lastIndex++;
+					}
+				}
+				if(leftCount != rightCount) {
+					braceError = true;
+				}
+				else {
+					braceError = false;
+				}
+			}
+			else if(!str.contains("(") && !str.contains(")")) {
+				braceError = false;
+			}
+			
+			if(braceError) {
+				ResultField.setText("Кількість закриваючих і відкриваючих дужок не сходиться");
+			}
+			else if(text.length > 30) {
+				ResultField.setText("Максимальна кількість чисел = 30");
+			}
+			else if(text[0] == 'm') {
+				result = Double.parseDouble(Engine.eval(str.substring(1, text.length)).toString());
 				result *= -1;
+				ResultField.setText(String.valueOf(result));
+			}
+			else if(text[0] == 'p') {
+				result = Double.parseDouble(Engine.eval(str.substring(1, text.length)).toString());
+				if(result < 0) {
+					result *= -1;
+				}
+				ResultField.setText(String.valueOf(result));
 			}
 			else {
-				result = Double.parseDouble(Engine.eval(ExpressionField.getText()).toString());
+				result = Double.parseDouble(Engine.eval(str).toString());
+				ResultField.setText(String.valueOf(result));
 			}
-			ResultField.setText(String.valueOf(result));
 		}
 		catch(Exception exc) 
 		{
