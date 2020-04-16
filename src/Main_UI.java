@@ -34,6 +34,7 @@ public class Main_UI extends Application
 	private final double ButtonHeight = 60;
 	private final int RowsCount = 4;
 	private final int ButtonInRowCount = 4;
+	private int Memory = 0;
 	
 	public static void main(String[] args)
 	{
@@ -258,6 +259,32 @@ public class Main_UI extends Application
 				calculate();
 			}
 		});
+		
+		ExtraButtons[1].setOnMouseClicked(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				String text = ResultField.getText();
+				if(text.length() > 0) {
+					try {
+						Memory += Double.parseDouble(text);
+					}
+					catch(NumberFormatException exc) {
+						ExpressionField.setText("Невозможно преобразовать к числу");
+					}
+				}
+			}
+		});
+		
+		ExtraButtons[2].setOnMouseClicked(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				Memory = 0;
+			}
+		});
+		
+		ExtraButtons[0].setOnMouseClicked(new EventHandler<MouseEvent>() {
+			public void handle(MouseEvent event) {
+				ExpressionField.setText(ExpressionField.getText() + String.valueOf(Memory));
+			}
+		});
 	}
 	
 	private void calculate() 
@@ -266,6 +293,7 @@ public class Main_UI extends Application
 		{
 			double result = 0;
 			boolean braceError = false;
+			int errorIndex = 0;
 			String str = ExpressionField.getText();
 			if(str.contains("mod")) {
 				str = str.replaceAll("mod", "%");
@@ -288,6 +316,7 @@ public class Main_UI extends Application
 					}	
 				}
 				lastIndex = 0;
+				
 				while(lastIndex != -1) {
 					lastIndex = str.indexOf(")", lastIndex);
 					if(lastIndex != -1) {
@@ -297,6 +326,7 @@ public class Main_UI extends Application
 				}
 				if(leftCount != rightCount) {
 					braceError = true;
+					errorIndex = leftCount + rightCount;
 				}
 				else {
 					braceError = false;
@@ -307,7 +337,7 @@ public class Main_UI extends Application
 			}
 			
 			if(braceError) {
-				ResultField.setText("Кількість закриваючих і відкриваючих дужок не сходиться");
+				ResultField.setText("Error 01. Неправильная скобочная структура, ошибка на " + errorIndex + " символе");
 			}
 			else if(text.length > 30) {
 				ResultField.setText("Максимальна кількість чисел = 30");
@@ -326,7 +356,12 @@ public class Main_UI extends Application
 			}
 			else {
 				result = Double.parseDouble(Engine.eval(str).toString());
-				ResultField.setText(String.valueOf(result));
+				if(String.valueOf(result) == "Infinity") {
+					ResultField.setText("Error 09. Ошибка деления на 0");
+				}
+				else {
+					ResultField.setText(String.valueOf(result));
+				}
 			}
 		}
 		catch(Exception exc) 
