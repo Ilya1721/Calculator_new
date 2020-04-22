@@ -293,7 +293,12 @@ public class Main_UI extends Application
 		{
 			double result = 0;
 			boolean braceError = false;
+			boolean symbolError = true;
+			boolean doubleOperandError = false;
+			boolean noOperandError = false;
 			int errorIndex = 0;
+			int symbolErrorIndex = 0;
+			int doubleOperandErrorIndex = 0;
 			String str = ExpressionField.getText();
 			if(str.contains("mod")) {
 				str = str.replaceAll("mod", "%");
@@ -302,6 +307,36 @@ public class Main_UI extends Application
 			char[] text = str.toCharArray();
 			if(text.length == 0) {
 				
+			}
+			
+			for(int i = 0; i < str.length(); ++i) {
+				symbolError = true;
+				for(int j = 0; j < RowsCount; ++j) {
+					for(int k = 0; k < ButtonInRowCount; ++k) {
+						if(str.substring(i, i + 1).equals(ButtonText[j][k])
+						   || str.substring(i, i + 1).equals("p")
+						   || str.substring(i, i + 1).equals("m")) {
+							symbolError = false;
+						}
+					}
+				}
+				if(symbolError) {
+					symbolErrorIndex = i;
+					break;
+				}
+			}
+			
+			for(int i = 0; i < text.length - 1; ++i) {
+				if(text[i] == text[i + 1]) {
+					try {
+						int r = Integer.parseInt("" + text[i]);
+						doubleOperandError = false;
+					}
+					catch(Exception exc) {
+						doubleOperandError = true;
+						doubleOperandErrorIndex = i + 1;
+					}
+				}
 			}
 			
 			if(str.contains("(") || str.contains(")")) {
@@ -337,10 +372,21 @@ public class Main_UI extends Application
 			}
 			
 			if(braceError) {
-				ResultField.setText("Error 01. Неправильная скобочная структура, ошибка на " + errorIndex + " символе");
+				ResultField.setText("Error 01 — Неправильная скобочная структура, ошибка на " + errorIndex + " символе");
+			}
+			else if(symbolError) {
+				ResultField.setText("Error 02 —  Неизвестный оператор на " + symbolErrorIndex +" символе.");
+			}
+			else if(doubleOperandError) {
+				ResultField.setText("Error 04 — Два подряд оператора на " + doubleOperandErrorIndex + " символе.");
 			}
 			else if(text.length > 30) {
-				ResultField.setText("Максимальна кількість чисел = 30");
+				ResultField.setText("Error 08 — Максимальна кількість чисел = 30");
+			}
+			else if(Double.parseDouble(Engine.eval(str.substring(0, text.length)).toString()) < -2147483648 
+					|| Double.parseDouble(Engine.eval(str.substring(0, text.length)).toString()) > 2147483647) {
+				ResultField.setText("Error 06 — Слишком малое или слишком большое значение числа для int."
+						+ " Числа должны быть в пределах от -2147483648 до 2147483647");
 			}
 			else if(text[0] == 'm') {
 				result = Double.parseDouble(Engine.eval(str.substring(1, text.length)).toString());
@@ -357,7 +403,7 @@ public class Main_UI extends Application
 			else {
 				result = Double.parseDouble(Engine.eval(str).toString());
 				if(String.valueOf(result) == "Infinity") {
-					ResultField.setText("Error 09. Ошибка деления на 0");
+					ResultField.setText("Error 09 — Ошибка деления на 0");
 				}
 				else {
 					ResultField.setText(String.valueOf(result));
@@ -366,7 +412,9 @@ public class Main_UI extends Application
 		}
 		catch(Exception exc) 
 		{
-			System.out.println(exc.toString());
+			if(exc.toString().contains("Expected an operand but found eof")) {
+				ResultField.setText("Error 05 — Незаконченное выражение.");
+			}
 		}
 	}
 	
